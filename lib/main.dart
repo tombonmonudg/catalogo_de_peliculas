@@ -1,25 +1,41 @@
 import 'package:flutter/material.dart';
+import 'api_service.dart';
+import 'pokemon_model.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MiAppPeliculas());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MiAppPeliculas extends StatelessWidget {
+  const MiAppPeliculas({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mi Bolsillo',
+      title: 'Catálogo de Películas',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const HomeScreen(),
+      theme: ThemeData(primarySwatch: Colors.blue, brightness: Brightness.dark),
+      home: PantallaInicio(),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class PantallaInicio extends StatefulWidget {
+  const PantallaInicio({super.key});
+
+  @override
+  _PantallaInicioState createState() => _PantallaInicioState();
+}
+
+class _PantallaInicioState extends State<PantallaInicio> {
+  late Future<Pokemon> futurePokemon;
+
+  @override
+  void initState() {
+    super.initState();
+
+    futurePokemon = fetchPokemon('pikachu');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,59 +43,57 @@ class HomeScreen extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/images/fondo_app.png', fit: BoxFit.cover),
-          Align(
-            alignment: const Alignment(0.0, -0.8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.phone_android,
-                  size: 80.0,
-                  color: Colors.white,
-                  shadows: [Shadow(blurRadius: 3.0, color: Colors.black54)],
-                ),
-                const SizedBox(height: 16.0),
-                const Text(
-                  'Mi Bolsillo',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32.0,
-                    fontWeight: FontWeight.bold,
-                    shadows: [Shadow(blurRadius: 5.0, color: Colors.black54)],
-                  ),
-                ),
-                const SizedBox(height: 8.0),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 40.0),
-                  child: Text(
-                    '¡Bienvenido a MiBolsillo! Lleva un control claro y sencillo de tus gastos diarios. ¡Registra tu primer gasto para empezar!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18.0,
-                      fontStyle: FontStyle.italic,
-                      shadows: [Shadow(blurRadius: 3.0, color: Colors.black54)],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 60.0),
-              child: const Text(
-                'REGISTRO DE GASTOS',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28.0,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2.0,
-                  shadows: [Shadow(blurRadius: 5.0, color: Colors.black87)],
-                ),
-              ),
+          Image.asset('assets/images/fondo_peliculas.jpg', fit: BoxFit.cover),
+
+          Container(color: Colors.black.withOpacity(0.5)),
+
+          Center(
+            child: FutureBuilder<Pokemon>(
+              future: futurePokemon,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator(color: Colors.white);
+                } else if (snapshot.hasError) {
+                  return Text(
+                    'Error: ${snapshot.error}',
+                    style: TextStyle(color: Colors.red, fontSize: 18),
+                  );
+                } else if (snapshot.hasData) {
+                  final pokemon = snapshot.data!;
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '¡Pokémon Obtenido!',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+
+                      Image.network(
+                        pokemon.imageUrl,
+                        height: 150,
+                        fit: BoxFit.cover,
+                      ),
+                      SizedBox(height: 20),
+
+                      Text(
+                        pokemon.name.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: Colors.yellowAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                return Text('Iniciando...');
+              },
             ),
           ),
         ],
