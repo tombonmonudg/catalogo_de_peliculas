@@ -1,102 +1,88 @@
 import 'package:flutter/material.dart';
-import 'api_service.dart';
-import 'pokemon_model.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicialización simple (Android leerá el google-services.json automáticamente)
+  await Firebase.initializeApp();
+
   runApp(const MiAppPeliculas());
 }
 
 class MiAppPeliculas extends StatelessWidget {
-  const MiAppPeliculas({super.key});
+  const MiAppPeliculas({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Catálogo de Películas',
+      title: 'Actividad 3.7 Firebase',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue, brightness: Brightness.dark),
-      home: PantallaInicio(),
+      home: PantallaFirebase(),
     );
   }
 }
 
-class PantallaInicio extends StatefulWidget {
-  const PantallaInicio({super.key});
+class PantallaFirebase extends StatelessWidget {
+  // Referencia a la colección en la nube
+  final CollectionReference coleccionPeliculas = FirebaseFirestore.instance
+      .collection('peliculas');
 
-  @override
-  _PantallaInicioState createState() => _PantallaInicioState();
-}
+  PantallaFirebase({Key? key}) : super(key: key);
 
-class _PantallaInicioState extends State<PantallaInicio> {
-  late Future<Pokemon> futurePokemon;
-
-  @override
-  void initState() {
-    super.initState();
-
-    futurePokemon = fetchPokemon('pikachu');
+  void agregarPelicula(BuildContext context) {
+    coleccionPeliculas
+        .add({
+          'titulo': 'Batman: El Caballero de la Noche',
+          'anio': 2008,
+          'metodo': 'Manual', // Para saber que funcionó nuestro método manual
+          'creado_en': DateTime.now(),
+        })
+        .then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Guardado exitoso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        })
+        .catchError((error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/images/fondo_peliculas.jpg', fit: BoxFit.cover),
-
-          Container(color: Colors.black.withOpacity(0.5)),
-
-          Center(
-            child: FutureBuilder<Pokemon>(
-              future: futurePokemon,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator(color: Colors.white);
-                } else if (snapshot.hasError) {
-                  return Text(
-                    'Error: ${snapshot.error}',
-                    style: TextStyle(color: Colors.red, fontSize: 18),
-                  );
-                } else if (snapshot.hasData) {
-                  final pokemon = snapshot.data!;
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '¡Pokémon Obtenido!',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 20),
-
-                      Image.network(
-                        pokemon.imageUrl,
-                        height: 150,
-                        fit: BoxFit.cover,
-                      ),
-                      SizedBox(height: 20),
-
-                      Text(
-                        pokemon.name.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 24,
-                          color: Colors.yellowAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  );
-                }
-
-                return Text('Iniciando...');
-              },
+      appBar: AppBar(title: const Text('Integración Manual')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.local_fire_department,
+              size: 100,
+              color: Colors.orange,
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            const Text(
+              'Integración vía google-services.json',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () => agregarPelicula(context),
+              icon: const Icon(Icons.save),
+              label: const Text('Guardar en Firebase'),
+            ),
+          ],
+        ),
       ),
     );
   }
